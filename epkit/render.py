@@ -1,8 +1,8 @@
-"""Rendering boilerplate: Plotly for embedded views, PyVista for live ones.
+"""Rendering boilerplate: Plotly meshes and the clinical colour scales.
 
-Every 3D figure in the notebook is produced twice. PyVista/trame gives a live
-rotatable VTK view; Plotly Mesh3d survives the kernel shutting down, so the
-saved notebook still shows its renders.
+Plotly is the only 3D engine left in the stack. It renders in the browser with
+no local install, which is what lets the published notebook show the same
+rotatable heart a laptop does.
 """
 
 from __future__ import annotations
@@ -98,66 +98,3 @@ def plotly_figure(traces, title="", height=650):
         ),
     )
     return fig
-
-
-def decimate(points, triangles, scalars, target_faces=20000):
-    """Reduce face count for embedded Plotly views.
-
-    Full resolution stays in the PyVista path; this only keeps the saved
-    notebook from bloating.
-    """
-    points = np.asarray(points, dtype=float)
-    triangles = np.asarray(triangles)
-    scalars = None if scalars is None else np.asarray(scalars, dtype=float)
-
-    if len(triangles) <= target_faces:
-        return points, triangles, scalars
-
-    import pyvista as pv
-    from scipy import spatial
-
-    faces = np.hstack([np.full((len(triangles), 1), 3), triangles]).ravel()
-    mesh = pv.PolyData(points, faces)
-
-    reduction = 1.0 - (target_faces / len(triangles))
-    reduced = mesh.decimate(reduction).triangulate().clean()
-
-    new_points = np.asarray(reduced.points)
-    new_tris = np.asarray(reduced.faces).reshape(-1, 4)[:, 1:]
-
-    # vtkQuadricDecimation discards point data, so carry the field across by
-    # nearest neighbour. This is a display-only reduction; the full-resolution
-    # field is what every computation actually uses.
-    new_scalars = None
-    if scalars is not None and len(new_points):
-        _, nearest = spatial.cKDTree(points).query(new_points, k=1)
-        new_scalars = scalars[nearest]
-
-    return new_points, new_tris, new_scalars
-
-
-def show_pyvista(mesh, scalars=None, *, cmap="turbo", title="", clim=None, **kwargs):
-    """Live PyVista/trame view, falling back to a static image if that fails.
-
-    Headless WSL2 sometimes cannot start a trame view; the fallback keeps the
-    notebook runnable end to end.
-    """
-    import pyvista as pv
-
-    try:
-        plotter = pv.Plotter(notebook=True, window_size=(760, 560))
-        plotter.add_mesh(
-            mesh, scalars=scalars, cmap=cmap, clim=clim, smooth_shading=True, **kwargs
-        )
-        if title:
-            plotter.add_text(title, font_size=10)
-        plotter.set_background("white")
-        return plotter.show(jupyter_backend="trame", return_viewer=True)
-    except Exception as exc:  # noqa: BLE001 - fall back rather than break the notebook
-        print(f"[trame unavailable: {exc}] falling back to a static image")
-        plotter = pv.Plotter(off_screen=True, window_size=(760, 560))
-        plotter.add_mesh(
-            mesh, scalars=scalars, cmap=cmap, clim=clim, smooth_shading=True, **kwargs
-        )
-        plotter.set_background("white")
-        return plotter.show(screenshot=True, return_img=True)

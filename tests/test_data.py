@@ -1,7 +1,20 @@
+"""The offline loaders: MATLAB in, arrays out.
+
+Skipped unless the build-time stack is installed and the datasets are cached,
+because none of it is needed to run the notebook — see requirements-build.txt.
+"""
+
 import numpy as np
 import pytest
 
-from epkit import load_case, load_rfindex
+pytest.importorskip("openep", reason="build-time only; see requirements-build.txt")
+
+from epkit.data import DATA_DIR, load_case, load_rfindex  # noqa: E402
+
+pytestmark = pytest.mark.skipif(
+    not (DATA_DIR / "openep_dataset_1.mat").exists(),
+    reason="datasets not cached; run scripts/build_bundle.py",
+)
 
 
 @pytest.fixture(scope="module")

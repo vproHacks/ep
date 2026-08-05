@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from epkit.render import decimate, mesh_to_plotly, plotly_figure, voltage_colorscale
+from epkit.render import mesh_to_plotly, plotly_figure, voltage_colorscale
 
 
 def _tetra():
@@ -44,22 +44,3 @@ def test_voltage_colorscale_is_normalised():
     assert positions[0] == 0.0
     assert positions[-1] == 1.0
     assert positions == sorted(positions)
-
-
-def test_decimate_reduces_face_count():
-    rng = np.random.default_rng(0)
-    n = 400
-    points = rng.random((n, 3))
-    tris = np.array([[i, (i + 1) % n, (i + 2) % n] for i in range(n)])
-    scalars = rng.random(n)
-    dp, dt, ds = decimate(points, tris, scalars, target_faces=50)
-    assert len(dt) <= len(tris)
-    assert len(ds) == len(dp)
-
-
-def test_decimate_is_a_noop_when_already_small():
-    points, tris = _tetra()
-    scalars = np.arange(4.0)
-    dp, dt, ds = decimate(points, tris, scalars, target_faces=1000)
-    assert len(dt) == len(tris)
-    assert len(dp) == len(points)

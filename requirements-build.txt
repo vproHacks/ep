@@ -1,0 +1,18 @@
+# Build-time stack: only needed to regenerate public/ep_primer_data.npz from the
+# OpenEP MATLAB exports. Nothing here is required to run the notebook.
+#
+# The pins are mandatory and hard-won:
+#   numpy<2       -> openep/case/interpolators.py uses np.NaN, removed in NumPy 2.0
+#   setuptools<81 -> openep's setup.py and _datasets import pkg_resources
+# Install in two phases, with --no-build-isolation, so openep's build sees the
+# pinned setuptools:
+#
+#   uv pip install "setuptools<81" wheel
+#   uv pip install --no-build-isolation -r requirements-build.txt
+#   python scripts/build_bundle.py
+numpy<2
+setuptools<81
+wheel
+scipy>=1.10
+pyvista>=0.43
+openep @ git+https://github.com/openep/openep-py@main

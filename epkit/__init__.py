@@ -10,31 +10,26 @@ from epkit.analysis import (
     fractionation_index,
     surface_gradient,
 )
-from epkit.data import DATA_DIR, LesionTags, load_case, load_rfindex
+from epkit.bundle import BUNDLE_NAME, Bundle, load_bundle
 from epkit.render import (
     LAT_CMAP,
     VOLTAGE_CMAP,
-    decimate,
     mesh_to_plotly,
     plotly_figure,
-    show_pyvista,
     voltage_colorscale,
 )
 
 __all__ = [
-    "DATA_DIR",
+    "BUNDLE_NAME",
+    "Bundle",
     "LAT_CMAP",
-    "LesionTags",
     "VOLTAGE_CMAP",
     "clean_lat",
     "conduction_velocity",
-    "decimate",
     "fractionation_index",
-    "load_case",
-    "load_rfindex",
+    "load_bundle",
     "mesh_to_plotly",
     "plotly_figure",
-    "show_pyvista",
     "surface_gradient",
     "voltage_colorscale",
 ]
