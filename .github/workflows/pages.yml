@@ -1,0 +1,68 @@
+name: Publish the notebook to GitHub Pages
+
+# The notebook is published as a WebAssembly page: marimo bundles the notebook,
+# the epkit wheel and public/ep_primer_data.npz, and the reader's browser runs
+# the Python. Nothing here needs openep-py, PyVista or the MATLAB exports —
+# those are only used offline, by scripts/build_bundle.py, to produce the .npz
+# that lives in the repository.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install the runtime stack
+        run: |
+          uv venv .venv --python 3.12
+          uv pip install --python .venv/bin/python -r requirements.txt
+
+      - name: Run the tests
+        run: .venv/bin/python -m pytest tests/ -q
+
+      - name: Build the epkit wheel
+        # marimo builds its own wheel for local packages during the export; this
+        # one backs the explicit micropip fallback in the notebook's first cell.
+        run: |
+          uv build --wheel -o dist
+          cp dist/epkit-*.whl public/
+
+      - name: Export the notebook to WebAssembly
+        run: |
+          .venv/bin/marimo export html-wasm ep_primer.py \
+            -o _site --mode run --show-code --no-sandbox -f
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

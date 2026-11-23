@@ -1,5 +1,9 @@
 .venv/
 data/*.mat
+dist/
+_site/
+public/*.whl
 __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
+__marimo__/
